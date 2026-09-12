@@ -14,6 +14,10 @@ function Dashboard() {
 
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [resumeFile, setResumeFile] = useState<File | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const [resumeText, setResumeText] = useState("")
+  const [uploadError, setUploadError] = useState("")
 
   useEffect(() => {
     async function fetchUser() {
@@ -49,6 +53,47 @@ function Dashboard() {
 
     fetchUser()
   }, [navigate])
+  
+
+  async function handleResumeUpload() {
+    alert("Upload button clicked")
+
+  if (!resumeFile) {
+    setUploadError("Please select a PDF file.")
+    return
+  }
+
+  setUploadError("")
+  setUploading(true)
+
+  const formData = new FormData()
+  formData.append("file", resumeFile)
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/resume/upload`, {
+      method: "POST",
+      body: formData,
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(data.detail || "Resume upload failed")
+    }
+
+    setResumeText(data.text)
+
+    console.log("Resume uploaded successfully:", data)
+  } catch (error) {
+    setUploadError(
+      error instanceof Error
+        ? error.message
+        : "Resume upload failed"
+    )
+  } finally {
+    setUploading(false)
+  }
+}
 
   function handleLogout() {
     localStorage.removeItem("access_token")
@@ -94,6 +139,64 @@ function Dashboard() {
             Your AI-powered career journey starts here.
           </p>
         </div>
+
+        <div className="bg-white rounded-2xl shadow-sm p-8 mb-8">
+
+            <h2 className="text-2xl font-bold text-gray-900">
+              Upload Your Resume
+            </h2>
+
+            <p className="text-gray-500 mt-2 mb-6">
+              Upload your resume PDF to extract and analyze its content.
+            </p>
+
+            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
+
+                <input
+                    type="file"
+                    accept=".pdf,application/pdf"
+                    onChange={(e) => {
+                        setResumeFile(e.target.files?.[0] || null)
+                        setUploadError("")
+                    }}
+                    className="block w-full text-sm text-gray-600"
+                />
+
+                <button
+                    onClick={handleResumeUpload}
+                    disabled={uploading || !resumeFile}
+                    className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50"
+                >
+                    {uploading ? "Uploading..." : "Upload Resume"}
+                </button>
+
+            </div>
+
+            {resumeFile && (
+                <p className="text-sm text-gray-500 mt-4">
+                    Selected: {resumeFile.name}
+                </p>
+            )}
+
+            {uploadError && (
+                <div className="mt-4 p-3 rounded-lg bg-red-100 text-red-700 text-sm">
+                    {uploadError}
+                </div>
+            )}
+
+        </div>
+
+        {resumeText && (
+            <div className="bg-white rounded-2xl shadow-sm p-8 mb-8">
+                <h2 className="text-2xl font-bold text-gray-900">
+                    Extracted Resume Text
+                </h2>
+
+                <pre className="mt-4 p-4 bg-gray-50 rounded-lg text-sm text-gray-700 whitespace-pre-wrap overflow-x-auto">
+                    {resumeText}
+                </pre>
+            </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 

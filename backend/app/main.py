@@ -4,7 +4,10 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import Base, engine
 from app.models.user import User
+from app.models.resume import Resume
 from app.routes.auth import router as auth_router
+
+from app.routes.resume import router as resume_router
 
 
 Base.metadata.create_all(bind=engine)
@@ -25,6 +28,8 @@ app.add_middleware(
 )
 
 app.include_router(auth_router)
+
+app.include_router(resume_router)
 
 @app.get("/")
 def root():
