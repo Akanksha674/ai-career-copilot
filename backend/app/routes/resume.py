@@ -6,6 +6,8 @@ import os
 from app.database import get_db
 from app.models.resume import Resume
 from app.services.pdf_service import extract_text_from_pdf
+from app.auth.dependencies import get_current_user
+from app.models.user import User
 
 
 router = APIRouter(
@@ -17,7 +19,8 @@ router = APIRouter(
 @router.post("/upload")
 async def upload_resume(
     file: UploadFile = File(...),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
 
     if file.content_type != "application/pdf":
@@ -43,7 +46,7 @@ async def upload_resume(
         os.remove(temp_file_path)
 
     new_resume = Resume(
-        user_id=1,
+        user_id=current_user.id,
         filename=file.filename,
         extracted_text=extracted_text
     )

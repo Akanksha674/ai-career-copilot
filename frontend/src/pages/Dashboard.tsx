@@ -70,10 +70,15 @@ function Dashboard() {
   formData.append("file", resumeFile)
 
   try {
+    const token = localStorage.getItem("access_token")
+
     const response = await fetch(`${API_BASE_URL}/resume/upload`, {
-      method: "POST",
-      body: formData,
-    })
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
+  })
 
     const data = await response.json()
 
