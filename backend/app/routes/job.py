@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+from app.services.ai_service import analyze_job_description as analyze_job_description_ai
 
 router = APIRouter(
     prefix="/job",
@@ -124,17 +125,9 @@ def analyze_job_description(request: JobDescriptionRequest):
 
     job_description = request.job_description
 
-    skills = extract_skills(job_description)
-    responsibilities = extract_responsibilities(job_description)
-    experience = extract_experience(job_description)
+    ai_analysis = analyze_job_description_ai(job_description)
 
     return {
         "message": "Job description analyzed successfully",
-        "analysis": {
-            "job_description": job_description,
-            "skills": skills,
-            "responsibilities": responsibilities,
-            "experience": experience,
-            "keywords": skills
-        }
+        "analysis": ai_analysis
     }
