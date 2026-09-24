@@ -1,3 +1,4 @@
+import json
 import ollama
 
 
@@ -5,19 +6,33 @@ def analyze_job_description(job_description: str):
     prompt = f"""
 Analyze the following job description.
 
-Extract the following information:
+Return ONLY valid JSON.
+Do not include markdown.
+Do not include ```json.
+Do not include any explanation outside the JSON.
 
-1. Job title
-2. Required technical skills
-3. Responsibilities
-4. Required experience
-5. Education requirements
-6. Important keywords
+Use exactly this structure:
+
+{{
+    "job_title": "",
+    "technical_skills": [],
+    "responsibilities": [],
+    "experience": "",
+    "education": "",
+    "keywords": []
+}}
+
+Rules:
+- Extract only information present in the job description.
+- If experience is not mentioned, use "None specified".
+- If education is not mentioned, use "None specified".
+- technical_skills must be an array of strings.
+- responsibilities must be an array of strings.
+- keywords must be an array of important job-related terms.
+- Do not invent information.
 
 Job Description:
 {job_description}
-
-Return the result in a clear and structured format.
 """
 
     response = ollama.chat(
@@ -30,4 +45,11 @@ Return the result in a clear and structured format.
         ]
     )
 
-    return response["message"]["content"]
+    content = response["message"]["content"]
+
+    try:
+        return json.loads(content)
+    except json.JSONDecodeError:
+        return {
+            "raw_analysis": content
+        }

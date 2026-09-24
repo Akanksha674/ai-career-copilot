@@ -22,7 +22,7 @@ function Dashboard() {
 
   // Stage 2: Job Description
   const [jobDescription, setJobDescription] = useState("")
-  const [jobAnalysis, setJobAnalysis] = useState("")
+  const [jobAnalysis, setJobAnalysis] = useState<any>(null)
   const [analyzingJob, setAnalyzingJob] = useState(false)
 
   useEffect(() => {
@@ -128,7 +128,7 @@ function Dashboard() {
       throw new Error(data.detail || "Job analysis failed")
     }
 
-    setJobAnalysis(JSON.stringify(data.analysis, null, 2))
+    setJobAnalysis(data.analysis)
   } catch (error) {
     setJobAnalysis(
       error instanceof Error
@@ -279,14 +279,107 @@ function Dashboard() {
           </button>
 
           {jobAnalysis && (
-            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-              <h3 className="font-semibold text-gray-900">
-                Analysis Result
+            <div className="mt-6 p-6 bg-gray-50 rounded-lg">
+              <h3 className="text-xl font-bold text-gray-900">
+                Job Analysis
               </h3>
 
-              <p className="mt-2 text-gray-700 whitespace-pre-wrap">
-                {jobAnalysis}
-              </p>
+              {/* Job Title */}
+              <div className="mt-5">
+                <h4 className="font-semibold text-gray-900">
+                  Job Title
+                </h4>
+                <p className="mt-1 text-gray-700">
+                  {jobAnalysis.job_title}
+                </p>
+              </div>
+
+              {/* Technical Skills */}
+              <div className="mt-5">
+                <h4 className="font-semibold text-gray-900">
+                  Technical Skills
+                </h4>
+
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {jobAnalysis.technical_skills?.map(
+                    (skill: string, index: number) => (
+                      <span
+                        key={index}
+                        className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm"
+                      >
+                        {skill}
+                      </span>
+                    )
+                  )}
+                </div>
+              </div>
+
+              {/* Responsibilities */}
+              <div className="mt-5">
+                <h4 className="font-semibold text-gray-900">
+                  Responsibilities
+                </h4>
+
+                <div className="mt-2 space-y-2">
+                  {jobAnalysis.responsibilities &&
+                  jobAnalysis.responsibilities.length > 0 ? (
+                    jobAnalysis.responsibilities.map(
+                      (responsibility: string, index: number) => (
+                        <div
+                          key={index}
+                          className="p-3 bg-white border border-gray-200 rounded-lg text-gray-700"
+                        >
+                          • {responsibility}
+                        </div>
+                      )
+                    )
+                  ) : (
+                    <p className="text-gray-500">
+                      No responsibilities specified.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Experience */}
+              <div className="mt-5">
+                <h4 className="font-semibold text-gray-900">
+                  Required Experience
+                </h4>
+                <p className="mt-1 text-gray-700">
+                  {jobAnalysis.experience}
+                </p>
+              </div>
+
+              {/* Education */}
+              <div className="mt-5">
+                <h4 className="font-semibold text-gray-900">
+                  Education Requirements
+                </h4>
+                <p className="mt-1 text-gray-700">
+                  {jobAnalysis.education}
+                </p>
+              </div>
+
+              {/* Keywords */}
+              <div className="mt-5">
+                <h4 className="font-semibold text-gray-900">
+                  Important Keywords
+                </h4>
+
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {jobAnalysis.keywords?.map(
+                    (keyword: string, index: number) => (
+                      <span
+                        key={index}
+                        className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm"
+                      >
+                        {keyword}
+                      </span>
+                    )
+                  )}
+                </div>
+              </div>
             </div>
           )}
 
