@@ -23,6 +23,8 @@ function Dashboard() {
   // Stage 2: Job Description
   const [jobDescription, setJobDescription] = useState("")
   const [jobAnalysis, setJobAnalysis] = useState<any>(null)
+  const [matchAnalysis, setMatchAnalysis] = useState<any>(null);
+  const [matchingJob, setMatchingJob] = useState(false);
   const [analyzingJob, setAnalyzingJob] = useState(false)
 
   useEffect(() => {
@@ -139,6 +141,42 @@ function Dashboard() {
     setAnalyzingJob(false)
   }
 }
+
+const handleResumeMatching = async () => {
+  if (!jobDescription.trim()) {
+    alert("Please enter a job description first.");
+    return;
+  }
+
+  setMatchingJob(true);
+
+  try {
+    const token = localStorage.getItem("access_token");
+
+    const response = await fetch("http://127.0.0.1:8000/job/match", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        job_description: jobDescription,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.detail || "Failed to match resume");
+    }
+
+    setMatchAnalysis(data.analysis);
+  } catch (error: any) {
+    alert(error.message);
+  } finally {
+    setMatchingJob(false);
+  }
+};
 
   function handleLogout() {
     localStorage.removeItem("access_token")
@@ -278,6 +316,14 @@ function Dashboard() {
             {analyzingJob ? "Analyzing..." : "Analyze Job"}
           </button>
 
+          <button
+            onClick={handleResumeMatching}
+            disabled={matchingJob}
+            className="mt-4 ml-3 px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition disabled:opacity-50"
+          >
+            {matchingJob ? "Matching..." : "Match Resume"}
+          </button>
+
           {jobAnalysis && (
             <div className="mt-6 p-6 bg-gray-50 rounded-lg">
               <h3 className="text-xl font-bold text-gray-900">
@@ -376,6 +422,124 @@ function Dashboard() {
                       >
                         {keyword}
                       </span>
+                    )
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {matchAnalysis && (
+            <div className="mt-6 p-6 bg-green-50 rounded-lg">
+              <h3 className="text-xl font-bold text-gray-900">
+                Resume Match Analysis
+              </h3>
+
+              {/* Match Percentage */}
+              <div className="mt-5">
+                <h4 className="font-semibold text-gray-900">
+                  Match Percentage
+                </h4>
+                <p className="mt-1 text-3xl font-bold text-green-600">
+                  {matchAnalysis.match_percentage}%
+                </p>
+              </div>
+
+              {/* Matching Skills */}
+              <div className="mt-5">
+                <h4 className="font-semibold text-gray-900">
+                  Matching Skills
+                </h4>
+
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {matchAnalysis.matching_skills?.map(
+                    (skill: string, index: number) => (
+                      <span
+                        key={index}
+                        className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm"
+                      >
+                        {skill}
+                      </span>
+                    )
+                  )}
+                </div>
+              </div>
+
+              {/* Missing Skills */}
+              <div className="mt-5">
+                <h4 className="font-semibold text-gray-900">
+                  Missing Skills
+                </h4>
+
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {matchAnalysis.missing_skills?.map(
+                    (skill: string, index: number) => (
+                      <span
+                        key={index}
+                        className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm"
+                      >
+                        {skill}
+                      </span>
+                    )
+                  )}
+                </div>
+              </div>
+
+              {/* Strengths */}
+              <div className="mt-5">
+                <h4 className="font-semibold text-gray-900">
+                  Strengths
+                </h4>
+
+                <div className="mt-2 space-y-2">
+                  {matchAnalysis.strengths?.map(
+                    (strength: string, index: number) => (
+                      <div
+                        key={index}
+                        className="p-3 bg-white border border-gray-200 rounded-lg text-gray-700"
+                      >
+                        • {strength}
+                      </div>
+                    )
+                  )}
+                </div>
+              </div>
+
+              {/* Skill Gaps */}
+              <div className="mt-5">
+                <h4 className="font-semibold text-gray-900">
+                  Skill Gaps
+                </h4>
+
+                <div className="mt-2 space-y-2">
+                  {matchAnalysis.skill_gaps?.map(
+                    (gap: string, index: number) => (
+                      <div
+                        key={index}
+                        className="p-3 bg-white border border-gray-200 rounded-lg text-gray-700"
+                      >
+                        • {gap}
+                      </div>
+                    )
+                  )}
+                </div>
+              </div>
+
+              {/* Suggestions */}
+              <div className="mt-5">
+                <h4 className="font-semibold text-gray-900">
+                  Suggestions
+                </h4>
+
+                <div className="mt-2 space-y-2">
+                  {matchAnalysis.suggestions?.map(
+                    (suggestion: string, index: number) => (
+                      <div
+                        key={index}
+                        className="p-3 bg-white border border-gray-200 rounded-lg text-gray-700"
+                      >
+                        • {suggestion}
+                      </div>
                     )
                   )}
                 </div>

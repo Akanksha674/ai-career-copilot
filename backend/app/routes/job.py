@@ -1,6 +1,18 @@
-from fastapi import APIRouter, HTTPException
+
+from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.orm import Session
 from pydantic import BaseModel
+
+from app.database import get_db
+from app.models.user import User
+from app.models.resume import Resume
+from app.auth.dependencies import get_current_user
+
 from app.services.ai_service import analyze_job_description as analyze_job_description_ai
+from app.services.ai_service import match_resume_with_job as match_resume_with_job_ai
+
+class ResumeJobMatchRequest(BaseModel):
+    job_description: str
 
 router = APIRouter(
     prefix="/job",
@@ -130,4 +142,39 @@ def analyze_job_description(request: JobDescriptionRequest):
     return {
         "message": "Job description analyzed successfully",
         "analysis": ai_analysis
+    }
+
+@router.post("/match")
+def match_resume_with_job(
+    request: ResumeJobMatchRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if not request.job_description.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Job description cannot be empty"
+        )
+
+    resume = (
+        db.query(Resume)
+        .filter(Resume.user_id == current_user.id)
+        .order_by(Resume.id.desc())
+        .first()
+    )
+
+    if not resume:
+        raise HTTPException(
+            status_code=404,
+            detail="No resume uploaded"
+        )
+
+    analysis = match_resume_with_job_ai(
+        resume.extracted_text,
+        request.job_description
+    )
+
+    return {
+        "message": "Resume matched with job successfully",
+        "analysis": analysis
     }
