@@ -121,3 +121,71 @@ JOB DESCRIPTION:
             return {
                 "raw_analysis": content
             }
+
+def tailor_resume(resume_text: str, job_description: str):
+    prompt = f"""
+Tailor the candidate's resume for the given job description.
+
+Return ONLY valid JSON.
+Do not include markdown.
+Do not include ```json.
+Do not include any explanation outside the JSON.
+
+Use exactly this structure:
+
+{{
+    "professional_summary": "",
+    "technical_skills": [],
+    "project_highlights": [],
+    "resume_improvements": []
+}}
+
+Rules:
+- Use only information that is actually present in the candidate's resume.
+- Do not invent work experience, projects, certifications, education, or skills.
+- Do not claim that the candidate has a skill if it is not present in the resume.
+- Rewrite the professional summary to better align with the job description.
+- Select technical skills from the resume that are relevant to the job description.
+- Select and rewrite relevant project experience from the resume.
+- Resume improvements should suggest truthful changes to improve alignment with the job description.
+- Do not recommend falsely claiming missing skills.
+- Keep the content concise and suitable for a professional resume.
+
+CANDIDATE RESUME:
+{resume_text}
+
+JOB DESCRIPTION:
+{job_description}
+"""
+
+    response = ollama.chat(
+        model="llama3.2",
+        messages=[
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ]
+    )
+
+    content = response["message"]["content"]
+
+    try:
+        return json.loads(content)
+    except json.JSONDecodeError:
+        cleaned_content = content.strip()
+
+        if cleaned_content.startswith("```json"):
+            cleaned_content = cleaned_content[7:]
+
+        if cleaned_content.endswith("```"):
+            cleaned_content = cleaned_content[:-3]
+
+        cleaned_content = cleaned_content.strip()
+
+        try:
+            return json.loads(cleaned_content)
+        except json.JSONDecodeError:
+            return {
+                "raw_analysis": content
+            }

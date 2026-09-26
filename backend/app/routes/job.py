@@ -10,8 +10,12 @@ from app.auth.dependencies import get_current_user
 
 from app.services.ai_service import analyze_job_description as analyze_job_description_ai
 from app.services.ai_service import match_resume_with_job as match_resume_with_job_ai
+from app.services.ai_service import tailor_resume as tailor_resume_ai
 
 class ResumeJobMatchRequest(BaseModel):
+    job_description: str
+
+class ResumeTailorRequest(BaseModel):
     job_description: str
 
 router = APIRouter(
@@ -176,5 +180,40 @@ def match_resume_with_job(
 
     return {
         "message": "Resume matched with job successfully",
+        "analysis": analysis
+    }
+
+@router.post("/tailor")
+def tailor_resume_for_job(
+    request: ResumeTailorRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if not request.job_description.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Job description cannot be empty"
+        )
+
+    resume = (
+        db.query(Resume)
+        .filter(Resume.user_id == current_user.id)
+        .order_by(Resume.id.desc())
+        .first()
+    )
+
+    if not resume:
+        raise HTTPException(
+            status_code=404,
+            detail="No resume uploaded"
+        )
+
+    analysis = tailor_resume_ai(
+        resume.extracted_text,
+        request.job_description
+    )
+
+    return {
+        "message": "Resume tailored successfully",
         "analysis": analysis
     }

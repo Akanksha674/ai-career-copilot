@@ -25,6 +25,8 @@ function Dashboard() {
   const [jobAnalysis, setJobAnalysis] = useState<any>(null)
   const [matchAnalysis, setMatchAnalysis] = useState<any>(null);
   const [matchingJob, setMatchingJob] = useState(false);
+  const [tailoredResume, setTailoredResume] = useState<any>(null);
+  const [tailoringResume, setTailoringResume] = useState(false);
   const [analyzingJob, setAnalyzingJob] = useState(false)
 
   useEffect(() => {
@@ -178,6 +180,47 @@ const handleResumeMatching = async () => {
   }
 };
 
+const handleResumeTailoring = async () => {
+  if (!jobDescription.trim()) {
+    alert("Please enter a job description first.");
+    return;
+  }
+
+  setTailoringResume(true);
+
+  try {
+    const token = localStorage.getItem("access_token");
+
+    const response = await fetch(
+      "http://127.0.0.1:8000/job/tailor",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          job_description: jobDescription,
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.detail || "Failed to tailor resume"
+      );
+    }
+
+    setTailoredResume(data.analysis);
+  } catch (error: any) {
+    alert(error.message);
+  } finally {
+    setTailoringResume(false);
+  }
+};
+
   function handleLogout() {
     localStorage.removeItem("access_token")
     navigate("/login")
@@ -322,6 +365,14 @@ const handleResumeMatching = async () => {
             className="mt-4 ml-3 px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition disabled:opacity-50"
           >
             {matchingJob ? "Matching..." : "Match Resume"}
+          </button>
+
+          <button
+            onClick={handleResumeTailoring}
+            disabled={tailoringResume}
+            className="mt-4 ml-3 px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition disabled:opacity-50"
+          >
+            {tailoringResume ? "Tailoring..." : "Tailor Resume"}
           </button>
 
           {jobAnalysis && (
@@ -546,6 +597,85 @@ const handleResumeMatching = async () => {
               </div>
             </div>
           )}
+
+        {tailoredResume && (
+          <div className="mt-6 p-6 bg-purple-50 rounded-lg">
+            <h3 className="text-xl font-bold text-gray-900">
+              AI Tailored Resume
+            </h3>
+
+            {/* Professional Summary */}
+            <div className="mt-5">
+              <h4 className="font-semibold text-gray-900">
+                Professional Summary
+              </h4>
+
+              <p className="mt-2 p-4 bg-white border border-gray-200 rounded-lg text-gray-700">
+                {tailoredResume.professional_summary}
+              </p>
+            </div>
+
+            {/* Technical Skills */}
+            <div className="mt-5">
+              <h4 className="font-semibold text-gray-900">
+                Technical Skills
+              </h4>
+
+              <div className="flex flex-wrap gap-2 mt-2">
+                {tailoredResume.technical_skills?.map(
+                  (skill: string, index: number) => (
+                    <span
+                      key={index}
+                      className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm"
+                    >
+                      {skill}
+                    </span>
+                  )
+                )}
+              </div>
+            </div>
+
+            {/* Project Highlights */}
+            <div className="mt-5">
+              <h4 className="font-semibold text-gray-900">
+                Project Highlights
+              </h4>
+
+              <div className="mt-2 space-y-2">
+                {tailoredResume.project_highlights?.map(
+                  (project: string, index: number) => (
+                    <div
+                      key={index}
+                      className="p-3 bg-white border border-gray-200 rounded-lg text-gray-700"
+                    >
+                      • {project}
+                    </div>
+                  )
+                )}
+              </div>
+            </div>
+
+            {/* Resume Improvements */}
+            <div className="mt-5">
+              <h4 className="font-semibold text-gray-900">
+                Resume Improvements
+              </h4>
+
+              <div className="mt-2 space-y-2">
+                {tailoredResume.resume_improvements?.map(
+                  (improvement: string, index: number) => (
+                    <div
+                      key={index}
+                      className="p-3 bg-white border border-gray-200 rounded-lg text-gray-700"
+                    >
+                      • {improvement}
+                    </div>
+                  )
+                )}
+              </div>
+            </div>
+          </div>
+        )}  
 
         </div>
 
