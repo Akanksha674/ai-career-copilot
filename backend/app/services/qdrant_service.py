@@ -1,5 +1,6 @@
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams
+from qdrant_client.models import Filter, FieldCondition, MatchValue
 
 QDRANT_HOST = "localhost"
 QDRANT_PORT = 6333
@@ -32,26 +33,31 @@ def create_collection():
     else:
         print(f"Collection '{COLLECTION_NAME}' already exists.")
 
-
-from qdrant_client.models import Filter, FieldCondition, MatchValue
-
-
 def search_documents(
     query_embedding: list[float],
     user_id: int,
+    resume_id: int | None = None,
     limit: int = 5
 ):
+    conditions = [
+        FieldCondition(
+            key="user_id",
+            match=MatchValue(value=user_id)
+        )
+    ]
+
+    if resume_id is not None:
+        conditions.append(
+            FieldCondition(
+                key="resume_id",
+                match=MatchValue(value=resume_id)
+            )
+        )
+
     results = qdrant_client.query_points(
         collection_name=COLLECTION_NAME,
         query=query_embedding,
-        query_filter=Filter(
-            must=[
-                FieldCondition(
-                    key="user_id",
-                    match=MatchValue(value=user_id)
-                )
-            ]
-        ),
+        query_filter=Filter(must=conditions),
         limit=limit,
         with_payload=True
     ).points

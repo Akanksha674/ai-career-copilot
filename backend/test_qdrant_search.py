@@ -9,6 +9,7 @@ embedding = generate_embedding(query)
 results = search_documents(
     query_embedding=embedding,
     user_id=7,
+    resume_id=23,
     limit=5
 )
 
@@ -21,4 +22,3 @@ for result in results:
         "| Chunk:", result.payload.get("chunk_index"),
         "| Resume ID:", result.payload.get("resume_id")
     )
-
