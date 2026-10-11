@@ -8,6 +8,7 @@ from app.models.resume import Resume
 from app.services.pdf_service import extract_text_from_pdf
 from app.auth.dependencies import get_current_user
 from app.models.user import User
+from app.services.document_service import store_document
 
 
 router = APIRouter(
@@ -54,6 +55,13 @@ async def upload_resume(
     db.add(new_resume)
     db.commit()
     db.refresh(new_resume)
+
+    store_document(
+        text=new_resume.extracted_text,
+        user_id=current_user.id,
+        resume_id=new_resume.id,
+        filename=new_resume.filename
+    )
 
     return {
         "id": new_resume.id,

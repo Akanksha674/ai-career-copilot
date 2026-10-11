@@ -31,3 +31,29 @@ def create_collection():
         print(f"Collection '{COLLECTION_NAME}' created.")
     else:
         print(f"Collection '{COLLECTION_NAME}' already exists.")
+
+
+from qdrant_client.models import Filter, FieldCondition, MatchValue
+
+
+def search_documents(
+    query_embedding: list[float],
+    user_id: int,
+    limit: int = 5
+):
+    results = qdrant_client.query_points(
+        collection_name=COLLECTION_NAME,
+        query=query_embedding,
+        query_filter=Filter(
+            must=[
+                FieldCondition(
+                    key="user_id",
+                    match=MatchValue(value=user_id)
+                )
+            ]
+        ),
+        limit=limit,
+        with_payload=True
+    ).points
+
+    return results
