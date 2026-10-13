@@ -8,6 +8,7 @@ from app.models.resume import Resume
 from app.routes.auth import router as auth_router
 from app.routes.resume import router as resume_router
 from app.routes.job import router as job_router
+from app.routes.career_assistant import router as career_assistant_router
 
 
 Base.metadata.create_all(bind=engine)
@@ -30,6 +31,7 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(resume_router)
 app.include_router(job_router)
+app.include_router(career_assistant_router)
 
 @app.get("/")
 def root():
