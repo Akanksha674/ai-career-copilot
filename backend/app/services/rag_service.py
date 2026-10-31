@@ -3,10 +3,12 @@ import ollama
 from app.services.embedding_service import generate_embedding
 from app.services.qdrant_service import search_documents
 
+
 def generate_rag_answer(
     question: str,
     context_chunks: list[str]
 ) -> str:
+
     if not context_chunks:
         return (
             "I couldn't find relevant information in your resume "
@@ -16,16 +18,35 @@ def generate_rag_answer(
     context = "\n\n".join(context_chunks)
 
     prompt = f"""
-You are an AI Career Assistant.
+You are an AI Career Assistant that answers questions
+based on a user's resume.
 
-Answer the user's question using only the resume context below.
+STRICT GROUNDING RULES:
 
-Rules:
-- Do not invent skills, qualifications, or experience.
-- If the context does not contain enough information, say so.
-- Keep the answer clear, relevant, and professional.
+1. Use only the information provided in the retrieved
+   resume context.
 
-Resume context:
+2. Do not use external knowledge, assumptions, or
+   information from other projects.
+
+3. Keep each project's technologies, responsibilities,
+   achievements, and descriptions separate.
+
+4. Mention a technology as part of a specific project
+   only when the retrieved context explicitly connects
+   that technology to that project.
+
+5. Never invent skills, qualifications, experience,
+   project details, metrics, or achievements.
+
+6. If the retrieved context does not contain enough
+   information, clearly state that the information
+   is not available in the provided resume context.
+
+7. If information is available, provide a clear,
+   relevant, and professional answer.
+
+Retrieved resume context:
 {context}
 
 User question:
@@ -45,6 +66,7 @@ Answer:
     )
 
     return response["message"]["content"].strip()
+
 
 
 def answer_resume_question(
