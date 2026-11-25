@@ -4,6 +4,9 @@ def is_project_heading(line: str) -> bool:
     pattern = r"^.+\|.+$"
     return bool(re.match(pattern, line.strip()))
 
+def extract_project_name(heading: str) -> str:
+    return heading.split("|", 1)[0].strip()
+
 def is_section_heading(line: str) -> bool:
     section_headings = {
         "PROFESSIONAL SUMMARY",
@@ -15,6 +18,32 @@ def is_section_heading(line: str) -> bool:
     }
 
     return line.strip().upper() in section_headings
+
+def get_resume_sections(text: str) -> dict[str, str]:
+    sections = {}
+    current_section = None
+    current_lines = []
+
+    for line in text.splitlines():
+        line = line.strip()
+
+        if not line:
+            continue
+
+        if is_section_heading(line):
+            if current_section:
+                sections[current_section] = "\n".join(current_lines)
+
+            current_section = line.upper()
+            current_lines = []
+
+        elif current_section:
+            current_lines.append(line)
+
+    if current_section:
+        sections[current_section] = "\n".join(current_lines)
+
+    return sections
 
 def split_text_into_chunks(
     text: str,
@@ -73,6 +102,7 @@ def split_into_projects(text: str) -> list[str]:
         if inside_projects_section and is_section_heading(line):
             if current_project:
                 projects.append("\n".join(current_project))
+                current_project = []
             break
 
         if not inside_projects_section:
@@ -110,3 +140,57 @@ Built an AI-powered career assistant.
     for index, project in enumerate(projects, start=1):
         print(f"\n--- Project {index} ---")
         print(project)
+
+def create_metadata_chunks(
+    text: str,
+    chunk_size: int = 1000,
+    overlap: int = 200
+) -> list[dict]:
+
+    metadata_chunks = []
+
+    sections = get_resume_sections(text)
+
+    for section_name, section_text in sections.items():
+
+        # Handle individual projects separately
+        if section_name == "PROJECTS":
+
+            projects = split_into_projects("PROJECTS\n" + section_text)
+
+            for project in projects:
+
+                lines = project.splitlines()
+                heading = lines[0]
+
+                project_name = extract_project_name(heading)
+
+                project_chunks = split_text_into_chunks(
+                    project,
+                    chunk_size,
+                    overlap
+                )
+
+                for chunk in project_chunks:
+                    metadata_chunks.append({
+                        "text": chunk,
+                        "section": section_name,
+                        "project_name": project_name
+                    })
+
+        # Handle all other resume sections
+        else:
+            chunks = split_text_into_chunks(
+                section_text,
+                chunk_size,
+                overlap
+            )
+
+            for chunk in chunks:
+                metadata_chunks.append({
+                    "text": chunk,
+                    "section": section_name,
+                    "project_name": None
+                })
+
+    return metadata_chunks

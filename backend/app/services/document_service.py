@@ -2,7 +2,7 @@
 from uuid import uuid4
 
 from qdrant_client.models import PointStruct
-from app.services.chunking_service import split_text_into_chunks
+from app.services.chunking_service import create_metadata_chunks
 from app.services.embedding_service import generate_embedding
 from app.services.qdrant_service import (
     qdrant_client,
@@ -16,7 +16,7 @@ def store_document(
     resume_id: int,
     filename: str
 ) -> int:
-    chunks = split_text_into_chunks(text)
+    chunks = create_metadata_chunks(text)
 
     if not chunks:
         return 0
@@ -24,7 +24,7 @@ def store_document(
     points = []
 
     for index, chunk in enumerate(chunks):
-        embedding = generate_embedding(chunk)
+        embedding = generate_embedding(chunk["text"])
 
         points.append(
             PointStruct(
@@ -35,7 +35,9 @@ def store_document(
                     "resume_id": resume_id,
                     "filename": filename,
                     "chunk_index": index,
-                    "text": chunk
+                    "text": chunk["text"],
+                    "section": chunk["section"],
+                    "project_name": chunk["project_name"]
                 }
             )
         )
