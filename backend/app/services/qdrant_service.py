@@ -81,3 +81,40 @@ def search_documents(
     ).points
 
     return results
+
+
+def get_resume_projects(
+    user_id: int,
+    resume_id: int
+) -> list[str]:
+
+    conditions = [
+        FieldCondition(
+            key="user_id",
+            match=MatchValue(value=user_id)
+        ),
+        FieldCondition(
+            key="resume_id",
+            match=MatchValue(value=resume_id)
+        ),
+        FieldCondition(
+            key="section",
+            match=MatchValue(value="PROJECTS")
+        )
+    ]
+
+    records, _ = qdrant_client.scroll(
+        collection_name=COLLECTION_NAME,
+        scroll_filter=Filter(must=conditions),
+        with_payload=True,
+        limit=100
+    )
+
+    project_names = {
+        record.payload["project_name"]
+        for record in records
+        if record.payload
+        and record.payload.get("project_name")
+    }
+
+    return list(project_names)

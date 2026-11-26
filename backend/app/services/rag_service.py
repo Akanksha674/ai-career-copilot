@@ -2,7 +2,10 @@
 import ollama
 from app.services.embedding_service import generate_embedding
 from app.services.qdrant_service import search_documents
-
+from app.services.qdrant_service import (
+    search_documents,
+    get_resume_projects
+)
 
 def generate_rag_answer(
     question: str,
@@ -68,6 +71,54 @@ Answer:
     return response["message"]["content"].strip()
 
 
+def detect_resume_section(question: str) -> str | None:
+    question = question.lower()
+
+    if "technical skills" in question or "skills" in question:
+        return "TECHNICAL SKILLS"
+
+    if "education" in question or "degree" in question:
+        return "EDUCATION"
+
+    if "certification" in question or "achievement" in question:
+        return "CERTIFICATIONS & ACHIEVEMENTS"
+
+    if "experience" in question:
+        return "TECHNICAL EXPERIENCE"
+
+    if "project" in question:
+        return "PROJECTS"
+
+    if "summary" in question:
+        return "PROFESSIONAL SUMMARY"
+
+    return None
+
+
+def detect_resume_project(
+    question: str,
+    user_id: int,
+    resume_id: int
+) -> str | None:
+
+    projects = get_resume_projects(
+        user_id=user_id,
+        resume_id=resume_id
+    )
+
+    question_lower = question.lower()
+
+    for project in projects:
+        project_lower = project.lower()
+
+        project_core_name = project_lower.split("—")[0].strip()
+        project_core_name = project_core_name.split("-")[0].strip()
+
+        if project_core_name in question_lower:
+            return project
+
+    return None
+
 
 def answer_resume_question(
     question: str,
@@ -76,6 +127,14 @@ def answer_resume_question(
     project_name: str | None = None,
     section: str | None = None
 ) -> str:
+    if section is None:
+        section = detect_resume_section(question)
+    if project_name is None:
+        project_name = detect_resume_project(
+            question=question,
+            user_id=user_id,
+            resume_id=resume_id
+        )
     # Step 1: Convert the question into an embedding
     query_embedding = generate_embedding(question)
 
