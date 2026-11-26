@@ -37,6 +37,8 @@ def search_documents(
     query_embedding: list[float],
     user_id: int,
     resume_id: int | None = None,
+    project_name: str | None = None,
+    section: str | None = None,
     limit: int = 5
 ):
     conditions = [
@@ -51,6 +53,22 @@ def search_documents(
             FieldCondition(
                 key="resume_id",
                 match=MatchValue(value=resume_id)
+            )
+        )
+
+    if project_name is not None:
+        conditions.append(
+            FieldCondition(
+                key="project_name",
+                match=MatchValue(value=project_name)
+            )
+        )
+
+    if section is not None:
+        conditions.append(
+            FieldCondition(
+                key="section",
+                match=MatchValue(value=section)
             )
         )
 
