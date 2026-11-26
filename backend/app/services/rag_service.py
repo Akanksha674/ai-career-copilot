@@ -72,7 +72,9 @@ Answer:
 def answer_resume_question(
     question: str,
     user_id: int,
-    resume_id: int
+    resume_id: int,
+    project_name: str | None = None,
+    section: str | None = None
 ) -> str:
     # Step 1: Convert the question into an embedding
     query_embedding = generate_embedding(question)
@@ -82,6 +84,8 @@ def answer_resume_question(
         query_embedding=query_embedding,
         user_id=user_id,
         resume_id=resume_id,
+        project_name=project_name,
+        section=section,
         limit=5
     )
 
