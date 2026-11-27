@@ -5,6 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.database import Base, engine
 from app.models.user import User
 from app.models.resume import Resume
+from app.models.conversation import Conversation
+from app.models.message import Message
 from app.routes.auth import router as auth_router
 from app.routes.resume import router as resume_router
 from app.routes.job import router as job_router
