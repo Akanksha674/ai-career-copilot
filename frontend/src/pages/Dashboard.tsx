@@ -16,9 +16,20 @@ function Dashboard() {
   const [loading, setLoading] = useState(true)
 
   const [resumeFile, setResumeFile] = useState<File | null>(null)
+  const [resumeId, setResumeId] = useState<number | null>(null)
+  const [activeConversationId, setActiveConversationId] =
+    useState<number | null>(null)
+  const [messages, setMessages] = useState<
+    { id: number; role: string; content: string }[]
+  >([])
+  const [conversations, setConversations] = useState<
+    { id: number; title: string; resume_id: number }[]
+  >([])
+  const [question, setQuestion] = useState("")
   const [uploading, setUploading] = useState(false)
   const [resumeText, setResumeText] = useState("")
   const [uploadError, setUploadError] = useState("")
+  
 
   // Stage 2: Job Description
   const [jobDescription, setJobDescription] = useState("")
@@ -53,6 +64,7 @@ function Dashboard() {
 
         const data = await response.json()
         setUser(data)
+        await fetchConversations()
       } catch {
         localStorage.removeItem("access_token")
         navigate("/login")
@@ -63,6 +75,59 @@ function Dashboard() {
 
     fetchUser()
   }, [navigate])
+
+  async function fetchConversations() {
+    try {
+      const token = localStorage.getItem("access_token")
+
+      const response = await fetch(
+        `${API_BASE_URL}/career-assistant/conversations`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch conversations")
+      }
+
+      const data = await response.json()
+
+      setConversations(data)
+
+    } catch (error) {
+      console.error("Error fetching conversations:", error)
+    }
+  }
+
+  async function fetchMessages(conversationId: number) {
+    try {
+      const token = localStorage.getItem("access_token")
+
+      const response = await fetch(
+        `${API_BASE_URL}/career-assistant/conversations/${conversationId}/messages`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch messages")
+      }
+
+      const data = await response.json()
+
+      setMessages(data)
+      setActiveConversationId(conversationId)
+
+    } catch (error) {
+      console.error("Error fetching messages:", error)
+    }
+  }
 
   async function handleResumeUpload() {
     if (!resumeFile) {
@@ -94,7 +159,8 @@ function Dashboard() {
       }
 
       setResumeText(data.text)
-
+      setResumeId(data.id)
+      
       console.log("Resume uploaded successfully:", data)
     } catch (error) {
       setUploadError(
