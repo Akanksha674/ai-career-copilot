@@ -6,6 +6,7 @@ from app.auth.dependencies import get_current_user
 from app.models.user import User
 from app.models.resume import Resume
 from app.models.conversation import Conversation
+from app.models.message import Message
 from app.schemas.conversation import ConversationCreateRequest
 from app.schemas.career_assistant import (
     CareerQuestionRequest,
@@ -21,30 +22,50 @@ router = APIRouter(
 @router.post(
     "/ask",
     response_model=CareerAnswerResponse
-    )
+)
 def ask_career_assistant(
     request: CareerQuestionRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    resume = (
-        db.query(Resume)
-            .filter(
-                Resume.id == request.resume_id,
-                Resume.user_id == current_user.id
-            )
-            .first()
+    conversation = (
+        db.query(Conversation)
+        .filter(
+            Conversation.id == request.conversation_id,
+            Conversation.user_id == current_user.id
+        )
+        .first()
     )
-    if resume is None:
+
+    if conversation is None:
         raise HTTPException(
             status_code=404,
-            detail="Resume not found"
+            detail="Conversation not found"
         )
+
+    user_message = Message(
+        conversation_id=conversation.id,
+        role="user",
+        content=request.question
+    )
+
+    db.add(user_message)
+    db.commit()
+
     answer = answer_resume_question(
         question=request.question,
         user_id=current_user.id,
-        resume_id=resume.id
+        resume_id=conversation.resume_id
     )
+
+    assistant_message = Message(
+        conversation_id=conversation.id,
+        role="assistant",
+        content=answer
+    )
+
+    db.add(assistant_message)
+    db.commit()
 
     return CareerAnswerResponse(answer=answer)
 
@@ -100,3 +121,35 @@ def get_conversations(
     )
 
     return conversations
+
+@router.get("/conversations/{conversation_id}/messages")
+def get_conversation_messages(
+    conversation_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    conversation = (
+        db.query(Conversation)
+        .filter(
+            Conversation.id == conversation_id,
+            Conversation.user_id == current_user.id
+        )
+        .first()
+    )
+
+    if conversation is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Conversation not found"
+        )
+
+    messages = (
+        db.query(Message)
+        .filter(
+            Message.conversation_id == conversation_id
+        )
+        .order_by(Message.created_at.asc())
+        .all()
+    )
+
+    return messages
