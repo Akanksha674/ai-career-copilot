@@ -131,11 +131,13 @@ function Dashboard() {
   }
 
   async function sendMessage() {
-    if (!question.trim() || !activeConversationId) {
-      return
-    }
+    if (!question.trim() || !activeConversationId || sendingMessage) {
+    return
+  }
 
     try {
+      setSendingMessage(true)
+
       const token = localStorage.getItem("access_token")
 
       const response = await fetch(
@@ -162,8 +164,10 @@ function Dashboard() {
       await fetchMessages(activeConversationId)
       setQuestion("")
 
-    } catch (error) {
+    }catch (error) {
       console.error("Error sending message:", error)
+    } finally {
+      setSendingMessage(false)
     }
   }
 
@@ -886,10 +890,10 @@ const handleResumeTailoring = async () => {
 
             <button
               onClick={sendMessage}
-              disabled={!activeConversationId || !question.trim()}
+              disabled={!activeConversationId || !question.trim() || sendingMessage}
               className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
             >
-              Send
+              {sendingMessage ? "Generating..." : "Send"}
             </button>
           </div>
         </div>
