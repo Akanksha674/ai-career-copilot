@@ -27,6 +27,7 @@ function Dashboard() {
   >([])
   const [question, setQuestion] = useState("")
   const [sendingMessage, setSendingMessage] = useState(false)
+  const [chatError, setChatError] = useState("")
   const [uploading, setUploading] = useState(false)
   const [resumeText, setResumeText] = useState("")
   const [uploadError, setUploadError] = useState("")
@@ -137,6 +138,7 @@ function Dashboard() {
 
     try {
       setSendingMessage(true)
+      setChatError("")
 
       const token = localStorage.getItem("access_token")
 
@@ -166,6 +168,7 @@ function Dashboard() {
 
     }catch (error) {
       console.error("Error sending message:", error)
+      setChatError("Something went wrong. Please try again.")
     } finally {
       setSendingMessage(false)
     }
@@ -873,12 +876,31 @@ const handleResumeTailoring = async () => {
                         {message.content}
                       </p>
                     </div>
-                  ))}
+                                    ))}
+
+                  {sendingMessage && (
+                    <div className="mr-auto bg-gray-100 text-gray-900 p-3 rounded-lg max-w-[85%]">
+                      <p className="text-xs font-semibold mb-1">
+                        AI Assistant
+                      </p>
+
+                      <p className="text-sm text-gray-500">
+                        AI is thinking...
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
             
           </div>
+          {chatError && (
+            <div className="mt-3 p-3 rounded-lg bg-red-50 border border-red-200">
+              <p className="text-sm text-red-600">
+                {chatError}
+              </p>
+            </div>
+          )}
           <div className="mt-4 flex gap-2">
             <input
               type="text"
