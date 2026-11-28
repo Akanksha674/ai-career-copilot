@@ -26,6 +26,7 @@ function Dashboard() {
     { id: number; title: string; resume_id: number }[]
   >([])
   const [question, setQuestion] = useState("")
+  const [sendingMessage, setSendingMessage] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [resumeText, setResumeText] = useState("")
   const [uploadError, setUploadError] = useState("")
@@ -126,6 +127,43 @@ function Dashboard() {
 
     } catch (error) {
       console.error("Error fetching messages:", error)
+    }
+  }
+
+  async function sendMessage() {
+    if (!question.trim() || !activeConversationId) {
+      return
+    }
+
+    try {
+      const token = localStorage.getItem("access_token")
+
+      const response = await fetch(
+        `${API_BASE_URL}/career-assistant/ask`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            question: question,
+            conversation_id: activeConversationId,
+          }),
+        }
+      )
+
+      if (!response.ok) {
+        throw new Error("Failed to send message")
+      }
+
+      const data = await response.json()
+
+      await fetchMessages(activeConversationId)
+      setQuestion("")
+
+    } catch (error) {
+      console.error("Error sending message:", error)
     }
   }
 
@@ -777,8 +815,83 @@ const handleResumeTailoring = async () => {
             <p className="text-gray-500 text-sm mt-2">
               Get AI-powered career guidance.
             </p>
-          </div>
 
+            <div className="mt-4 space-y-2">
+              <h4 className="text-sm font-medium text-gray-700">
+                Previous Conversations
+              </h4>
+
+              {conversations.length === 0 ? (
+                <p className="text-sm text-gray-500">
+                  No conversations yet.
+                </p>
+              ) : (
+                conversations.map((conversation) => (
+                  <button
+                    key={conversation.id}
+                    onClick={() => fetchMessages(conversation.id)}
+                    className="w-full text-left p-3 rounded-lg border hover:bg-gray-50"
+                  >
+                    {conversation.title}
+                  </button>
+                ))
+              )}
+            </div>
+            <div className="mt-6 border-t pt-4">
+              <h4 className="font-medium text-gray-900 mb-3">
+                Conversation Messages
+              </h4>
+
+              {!activeConversationId ? (
+                <p className="text-sm text-gray-500">
+                  Select a conversation to view messages.
+                </p>
+              ) : messages.length === 0 ? (
+                <p className="text-sm text-gray-500">
+                  No messages in this conversation yet.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {messages.map((message) => (
+                    <div
+                      key={message.id}
+                      className={`p-3 rounded-lg max-w-[85%] ${
+                        message.role === "user"
+                          ? "ml-auto bg-blue-100 text-gray-900"
+                          : "mr-auto bg-gray-100 text-gray-900"
+                      }`}
+                    >
+                      <p className="text-xs font-semibold mb-1">
+                        {message.role === "user" ? "You" : "AI Assistant"}
+                      </p>
+
+                      <p className="text-sm whitespace-pre-wrap">
+                        {message.content}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+          </div>
+          <div className="mt-4 flex gap-2">
+            <input
+              type="text"
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              placeholder="Ask something about your career..."
+              className="flex-1 border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+
+            <button
+              onClick={sendMessage}
+              disabled={!activeConversationId || !question.trim()}
+              className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            >
+              Send
+            </button>
+          </div>
         </div>
 
       </main>
